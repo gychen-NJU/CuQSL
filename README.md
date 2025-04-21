@@ -10,13 +10,13 @@ Compute the QSL (Quasi-Separatrix Layer) for magnetic field data using CUDA acce
 - [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) installed
 
 ### Project Structure
-cuQSL/
-├── src/
-│   └── cuQSL/              # Core package
-│       ├── __init__.py
-│       ├── cuQSL_cat.py     # Main calculation module
-│       └── cuQSL_cat_scripts.py  # Helper scripts
-├── setup.py
+cuQSL/\\
+├── src/\\
+│   └── cuQSL/              # Core package\\
+│       ├── __init__.py\\
+│       ├── cuQSL_cat.py     # Main calculation module\\
+│       └── cuQSL_cat_scripts.py  # Helper scripts\\
+├── setup.py\\
 └── pyproject.toml
 
 ### Install via pip
