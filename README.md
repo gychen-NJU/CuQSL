@@ -28,9 +28,10 @@ pip install --use-pep517  .
 ```
 ### Basic Usage
 ```python
+    >>> import cuQSL
     >>> Bxyz = np.load('Bxyz.npy')
     >>> grid_xyz = [xgrid,ygrid,zgrid]
-    >>> solver = qsl_solver_cat(Bxyz, grid_xyz)
+    >>> solver = cuQSL.cat(Bxyz, grid_xyz) # cartesian data
     >>> points = np.load('points.npy')
     >>> device = ['cuda:0','cuda:1']
     >>> logQ,Length,Twist = solver(points, devices=device)
