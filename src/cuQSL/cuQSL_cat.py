@@ -51,12 +51,19 @@ class TorchRegularInterpolator:
         points = points[:,[2,1,0]].view(1,-1,1,1,3)
         data   = self.data.to(device)
         if self.ndim == 4:
+<<<<<<< HEAD
             interp = F.grid_sample(data, points, mode=mode, align_corners=True, **kwargs).squeeze().t()
             # print(f'interp shape: {interp.shape}')
             # print(f'points shape: {points.shape}')
             interp = interp.view(points.shape[1],-1)
         elif self.ndim == 5:
             interp = F.grid_sample(data, points, mode=mode, align_corners=True, **kwargs).squeeze().t()
+=======
+            interp = F.grid_sample(data, points, mode=mode, **kwargs).squeeze().t()
+            interp = interp.view(points.shape[1],-1)
+        elif self.ndim == 5:
+            interp = F.grid_sample(data, points, mode=mode, **kwargs).squeeze().t()
+>>>>>>> d905b53dad074c2669079616db069ce6e0301523
             # print(f'interp shape: {interp.shape}')
             # print(f'points shape: {points.shape}')
             interp = interp.view(points.shape[1],*self.size[-2:])
