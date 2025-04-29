@@ -1,0 +1,13 @@
+Metadata-Version: 2.2
+Name: cuQSL
+Version: 1.0.0
+Summary: Compute the QSL for a given point data based on CUDA
+Author: Chen Guoyin
+Author-email: gychen@smail.nju.edu.cn
+Requires-Dist: numpy>=1.18.5
+Requires-Dist: torch>=1.10.0
+Requires-Dist: matplotlib>=3.2.2
+Dynamic: author
+Dynamic: author-email
+Dynamic: requires-dist
+Dynamic: summary
