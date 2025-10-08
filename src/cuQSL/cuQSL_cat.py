@@ -159,7 +159,7 @@ class qsl_solver_cat:
             task_list.append(os.path.join(temp_save_path,f'task_{i:04d}.pkl'))
         commands = []
         for i,task_name in enumerate(task_list):
-            command = f'{python} cuQSL_cat_scripts.py --load_file {task_name} --save_file {task_name.replace(".pkl","_results.pkl")} --device {devices[i]}'
+            command = f'{python} cuQSL.cuQSL_cat_scripts.py --load_file {task_name} --save_file {task_name.replace(".pkl","_results.pkl")} --device {devices[i]}'
             command = command + f' > {task_name.replace(".pkl",".out")} 2>&1'
             commands.append(command)
 
