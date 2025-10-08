@@ -212,7 +212,6 @@ def initializeUV(xyz, **kwargs):
         Vvec[cond1 & cond2 & ~cond3,0] = 1.
         Vvec[cond1 & cond2 & ~cond3,1] = -bhat[cond1 & cond2 & ~cond3,0]/bhat[cond1 & cond2 & ~cond3,1]
         Vvec[cond1 & cond2 & ~cond3,2] = 0.
-<<<<<<< HEAD
     if torch.any(cond1 & ~cond2):
         Vvec[cond1 & ~cond2,0] = -bhat[cond1 & ~cond2,1]/bhat[cond1 & ~cond2,0]
         Vvec[cond1 & ~cond2,1] = 1.
@@ -221,18 +220,6 @@ def initializeUV(xyz, **kwargs):
         Vvec[~cond1,0] = 0.
         Vvec[~cond1,1] = 1.
         Vvec[~cond1,2] = -bhat[~cond1,1]/bhat[~cond1,2]
-=======
-    elif torch.any(cond1 & ~cond2):
-        Vvec[cond1 & ~cond2,0] = -bhat[cond1 & ~cond2,1]/bhat[cond1 & ~cond2,0]
-        Vvec[cond1 & ~cond2,1] = 1.
-        Vvec[cond1 & ~cond2,2] = 0.
-    elif torch.any(~cond1):
-        Vvec[~cond1,0] = 0.
-        Vvec[~cond1,1] = 1.
-        Vvec[~cond1,2] = -bhat[~cond1,1]/bhat[~cond1,2]
-    else:
-        pass
->>>>>>> d905b53dad074c2669079616db069ce6e0301523
     Uvec = torch.cross(bhat, Vvec, dim=-1)
     Vn   = torch.norm(Vvec,dim=-1)
     Un   = torch.norm(Uvec,dim=-1)
