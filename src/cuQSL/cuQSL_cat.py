@@ -12,6 +12,9 @@ import subprocess
 import time
 import shutil
 
+os.environ['MKL_THREADING_LAYER'] = 'GNU'
+os.environ['MKL_SERVICE_FORCE_INTEL'] = '0'
+
 def Cartesian_curl(V):
     V = V.transpose(3,0,1,2)
     Vx = V[0]
