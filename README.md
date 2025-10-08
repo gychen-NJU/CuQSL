@@ -24,7 +24,7 @@ cuQSL/
 ### Install via pip
 ```bash
 # Install from source (recommended for latest features)
-git clone https://github.com/yourusername/cuQSL.git
+git clone git@github.com:gychen-NJU/CuQSL.git
 cd cuQSL
 pip install --use-pep517  .
 ```
