@@ -341,7 +341,7 @@ def qsl_calculator(xyz,**kwargs):
 print(f'## Computing the QSL for {len(points)} points',flush=True)
 
 if len(points)<max_batch:
-    logQ,length,Tw = qsl_calculator(points)
+    logQ,length,Tw = qsl_calculator(points, **usr_kwargs)
     logQ = logQ.cpu().numpy()
     length = length.cpu().numpy()
     Tw = Tw.cpu().numpy()
@@ -350,7 +350,7 @@ else:
     length = []
     Tw = []
     for i in range(0,len(points),max_batch):
-        i_logQ,i_length,i_Tw = qsl_calculator(points[i:i+max_batch])
+        i_logQ,i_length,i_Tw = qsl_calculator(points[i:i+max_batch], **usr_kwargs)
         logQ.append(i_logQ.cpu().numpy())
         length.append(i_length.cpu().numpy())
         Tw.append(i_Tw.cpu().numpy())
