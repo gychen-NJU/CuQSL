@@ -146,7 +146,9 @@ class qsl_solver_cat:
         total_batch = len(points)
         ntasks = len(devices)
         batch_size = int(np.ceil(total_batch/ntasks))
-        temp_save_path = './.qsl_temp_save_path/'
+        current_path   = kwargs.pop('current_path','./')
+        temp_save_path = os.path.join(current_path,'.qsl_temp_save_path/')
+        print('Temporary file path: ', temp_save_path)
         python = kwargs.pop('python', 'python')
         self.usr_kwargs = kwargs
         if not os.path.exists(temp_save_path):
