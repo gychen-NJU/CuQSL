@@ -139,6 +139,10 @@ class SphericalGeometry:
     def curl(self, x):
         return self._box.curl(x)
 
+    def sample(self, x):
+        """Packed interpolation of ``(B, bhat, jacb, curl)`` on the resampled cube."""
+        return self._box.sample(x)
+
 
 class qsl_solver_sph(_BaseSolver):
     """QSL map for a field given in spherical coordinates.
@@ -154,8 +158,10 @@ class qsl_solver_sph(_BaseSolver):
         must be uniform.
     """
 
-    def __init__(self, Brtp, rtp_range, stretched=(False, False, False), **kwargs):
-        super().__init__(SphericalGeometry(Brtp, rtp_range, stretched), **kwargs)
+    def __init__(self, Brtp, rtp_range, stretched=(False, False, False), *,
+                 dtype=torch.float64, **kwargs):
+        super().__init__(SphericalGeometry(Brtp, rtp_range, stretched, dtype=dtype),
+                         dtype=dtype, **kwargs)
 
     def __call__(self, points=None, **kwargs):
         if points is None:

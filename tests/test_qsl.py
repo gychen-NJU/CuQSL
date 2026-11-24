@@ -100,6 +100,32 @@ class TestCartesian:
         second = restored(np.array([[0.0, 0.5, 0.0]]))[0]
         np.testing.assert_allclose(first, second, atol=1e-12)
 
+    def test_float32_works_and_matches_float64(self):
+        import torch
+
+        B, grid = shear_field(n=21)
+        points = np.array([[0.0, 0.5, 0.0], [0.0, -0.3, 0.2]])
+        q64, L64, T64 = cat(B, grid, dtype=torch.float64)(points)
+        q32, L32, T32 = cat(B, grid, dtype=torch.float32)(points)
+        # float32 keeps the layout but loses ~1e-3 in the exponent.
+        np.testing.assert_allclose(q32, q64, atol=2e-3)
+        np.testing.assert_allclose(L32, L64, atol=2e-3)
+        np.testing.assert_allclose(T32, T64, atol=2e-3)
+
+    def test_analytic_exit_fraction_matches_inside(self):
+        B, grid = shear_field(n=11)
+        solver = cat(B, grid)
+        geom = solver.geometry
+        start = np.array([[0.0, 0.0, 0.0]], dtype=float)
+        end = np.array([[0.0, 0.0, 2.5]], dtype=float)  # leaves the [-1, 1]^3 box
+        import torch
+
+        frac = geom.exit_fraction(torch.as_tensor(start), torch.as_tensor(end))
+        np.testing.assert_allclose(frac.numpy(), [0.4], atol=1e-12)
+        # a segment that stays inside keeps the whole step
+        frac_in = geom.exit_fraction(torch.as_tensor(start), torch.as_tensor([[0.0, 0.0, 0.5]]))
+        np.testing.assert_allclose(frac_in.numpy(), [1.0], atol=1e-12)
+
 
 class TestSpherical:
     @staticmethod

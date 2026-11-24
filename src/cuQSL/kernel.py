@@ -52,15 +52,35 @@ class FieldLineKernel:
         self.hmax = self.step_size * float(hmax_factor)
         self.n_bisect = int(n_bisect)
         self.rk = Fehlberg45(atol_pos=atol_pos, atol_vec=atol_vec, rtol=rtol)
+        self._sample = getattr(geometry, "sample", None)
+        self._exit = getattr(geometry, "exit_fraction", None)
+
+    # -------------------------------------------------------------- compile
+    def compile(self, **kwargs):
+        """Wrap the right-hand side in ``torch.compile`` (fusion + fewer launches)."""
+        kwargs.setdefault("dynamic", False)
+        self._rhs = torch.compile(self._rhs, **kwargs)
+        return self
 
     # ------------------------------------------------------------------ rhs
     def _rhs(self, y):
         x, U, V = y[:, :3], y[:, 3:6], y[:, 6:9]
-        B = self.geom.bhat(x)
-        J = self.geom.jacb(x)
+        if self._sample is not None:
+            _B, B, J, _curl = self._sample(x)
+        else:  # geometry without a packed sampler
+            B = self.geom.bhat(x)
+            J = self.geom.jacb(x)
         dU = torch.einsum("nd,ndc->nc", U, J)
         dV = torch.einsum("nd,ndc->nc", V, J)
         return torch.cat((B, dU, dV), dim=1)
+
+    def _twist_at(self, x):
+        if self._sample is not None:
+            B, _bhat, _J, curl = self._sample(x)
+        else:
+            B = self.geom.Bvec(x)
+            curl = self.geom.curl(x)
+        return twist_integrand(B, curl)
 
     # -------------------------------------------------------------- one leg
     def _trace(self, points, sign):
@@ -76,7 +96,7 @@ class FieldLineKernel:
         length, twist = zero.clone(), zero.clone()
         steps = torch.zeros(n, dtype=torch.long, device=dev)
         h = torch.full((n,), self.step_size * sign, dtype=dtype, device=dev)
-        g = twist_integrand(self.geom.Bvec(x), self.geom.curl(x))
+        g = self._twist_at(x)
 
         status = torch.zeros(n, dtype=torch.long, device=dev)
         bad_seed = ~torch.isfinite(B0).all(dim=-1) | (B0.pow(2).sum(-1) <= 0)
@@ -97,42 +117,47 @@ class FieldLineKernel:
             accept = active & ((err <= 1.0) | at_floor)
 
             # Locate the wall for lines that left the domain during the step.
-            frac = torch.ones_like(h)
             crossed = accept & ~self.geom.inside(y_try[:, :3])
-            if bool(crossed.any()):
-                idx = crossed.nonzero(as_tuple=False).squeeze(1)
-                yc, hc = y[idx], h[idx]
-                lo = torch.zeros(idx.numel(), dtype=dtype, device=dev)
-                hi = torch.ones(idx.numel(), dtype=dtype, device=dev)
-                for _ in range(self.n_bisect):
-                    mid = 0.5 * (lo + hi)
-                    with torch.no_grad():
-                        ym, _ = self.rk.attempt(self._rhs, yc, hc * mid)
-                    inside_mid = self.geom.inside(ym[:, :3])
-                    lo = torch.where(inside_mid, mid, lo)
-                    hi = torch.where(inside_mid, hi, mid)
-                frac[idx] = lo
-
             y_end = y_try
             if bool(crossed.any()):
                 idx = crossed.nonzero(as_tuple=False).squeeze(1)
+                yc, hc = y[idx], h[idx]
+                if self._exit is not None:
+                    frac = self._exit(yc[:, :3], y_try[idx, :3]).to(dtype=dtype)
+                else:
+                    lo = torch.zeros(idx.numel(), dtype=dtype, device=dev)
+                    hi = torch.ones(idx.numel(), dtype=dtype, device=dev)
+                    for _ in range(self.n_bisect):
+                        mid = 0.5 * (lo + hi)
+                        with torch.no_grad():
+                            ym, _ = self.rk.attempt(self._rhs, yc, hc * mid)
+                        inside_mid = self.geom.inside(ym[:, :3])
+                        lo = torch.where(inside_mid, mid, lo)
+                        hi = torch.where(inside_mid, hi, mid)
+                    frac = torch.where(inside_mid, hi, lo)
                 with torch.no_grad():
-                    y_cut, _ = self.rk.attempt(self._rhs, y[idx], h[idx] * frac[idx])
-                y_end = y_end.index_copy(0, idx, y_cut)
+                    y_cut, _ = self.rk.attempt(self._rhs, yc, hc * frac)
+                y_end = y_try.index_copy(0, idx, y_cut)
+                ds_cut = (hc * frac).abs()
+            else:
+                ds_cut = torch.zeros(0, dtype=dtype, device=dev)
 
-            ds = torch.where(accept, h * frac, zero)
+            ds = torch.where(accept, h.abs(), zero)
+            if ds_cut.numel():
+                ds = ds.index_copy(0, crossed.nonzero(as_tuple=False).squeeze(1), ds_cut)
+            ds = torch.where(accept, ds, zero)
             keep = accept.unsqueeze(1)
             x = torch.where(keep, y_end[:, :3], x)
             U = torch.where(keep, y_end[:, 3:6], U)
             V = torch.where(keep, y_end[:, 6:9], V)
 
             finite_end = torch.isfinite(y_end).all(dim=-1)
-            g_end = twist_integrand(self.geom.Bvec(x), self.geom.curl(x))
+            g_end = self._twist_at(x)
             g_end = torch.where(torch.isfinite(g_end), g_end, torch.zeros_like(g_end))
             # Arclength element is positive on both legs: the twist integral is
             # field-aligned, and the two legs together cover B -> F.
-            twist = twist + torch.where(accept, 0.5 * (g + g_end) * ds.abs(), zero)
-            length = length + torch.where(accept, ds.abs(), zero)
+            twist = twist + torch.where(accept, 0.5 * (g + g_end) * ds, zero)
+            length = length + torch.where(accept, ds, zero)
             g = torch.where(accept, g_end, g)
             steps = steps + accept.long()
 
@@ -154,7 +179,7 @@ class FieldLineKernel:
                 status,
             )
 
-        B_end = self.geom.Bvec(x)
+        B_end = self.geom.sample(x)[0] if self._sample is not None else self.geom.Bvec(x)
         return {
             "point": x,
             "U": U,

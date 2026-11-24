@@ -29,8 +29,8 @@ class TensorFieldInterpolator:
             raise ValueError(f"field must be (nx, ny, nz, C), got {tuple(tensor.shape)}")
         self.shape = tuple(int(s) for s in tensor.shape[:3])
         self.channels = int(tensor.shape[3])
-        if self.channels not in (3, 9):
-            raise ValueError("only 3 (vector) or 9 (3x3 matrix) channels are supported")
+        if self.channels <= 0:
+            raise ValueError("field needs at least one channel")
         # (nx, ny, nz, C) -> (1, C, nx, ny, nz)  (grid_sample wants W = last axis)
         self._grid = tensor.permute(3, 0, 1, 2).unsqueeze(0).contiguous()
         self.dtype = dtype

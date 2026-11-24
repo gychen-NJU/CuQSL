@@ -114,9 +114,11 @@ together cover the full line `B -> F`.
 
 ## Accuracy and cost
 
-* Everything is `float64`; the step size is adaptive (Fehlberg 4(5), classical
-  coefficient table) with per-line control, and the exit point is located by
-  bisection on the domain predicate.
+* Default dtype is `float64`; pass `dtype=torch.float32` to halve the memory
+  footprint, and `device="cuda"` to run the whole batch on the GPU. The step
+  size is adaptive (Fehlberg 4(5), classical coefficient table) with per-line
+  control; the exit point is found analytically by clipping the step against
+  the axis-aligned box (a fallback bisection is not needed).
 * On analytic test fields: uniform field gives `logQ = log10(2)` to machine
   precision; a shear field `B = (y, 0, 1)` gives `logQ = 0.7160` (flux-tube
   convention) with a second-order convergence in grid spacing
@@ -130,6 +132,35 @@ together cover the full line `B -> F`.
 * Seeds are evaluated in batches (`solver.batch_size`, default 262144); the
   solver keeps the last run in `solver.last_result` together with per-point
   status codes, see `cuQSL.Diagnostics.summary`.
+
+### Throughput
+
+`B`, `bhat`, the Jacobian of `bhat` and `curl B` are packed into a single
+15-channel grid, so every Runge-Kutta stage costs one `grid_sample` call
+instead of three, and a boundary crossing costs one step instead of a
+40-iteration bisection. On a 6241-point slice through a Titov-Demoulin flux
+rope (81x81x51 grid, `step_size = 0.055`, median 19 steps per line) on an
+RTX 4060 Laptop:
+
+| configuration | wall time | per point | vs 2.0.1 |
+| --- | --- | --- | --- |
+| 2.0.1, CPU, float64 | 141.5 s | 22.6 ms | 1x |
+| 2.0.2, CPU, float64 | 55.9 s | 8.95 ms | 2.5x |
+| 2.0.2, GPU, float32 | 16.5 s | 2.65 ms | 8.5x |
+| 2.0.2, GPU, float64 | 15.7 s | 2.51 ms | 9.0x |
+
+Both dtypes cost the same on the GPU because the loop is launch-bound, not
+arithmetic-bound; `float32` buys memory, not speed. GPU `float32` agrees with
+CPU `float64` to `4e-5` in the median exponent (`p99 = 1.2e-3`,
+`max = 6e-3` on nearly singular QSL ridges).
+
+`solver.kernel.compile(backend="cudagraphs")` wraps the right-hand side in
+CUDA graphs. It pays off only when lines are long: at 4096 seeds through the
+same slice it turns 15.4 s into 9.4 s (1.6x), but at 6241 seeds, where the
+median line is only 20 steps, graph capture dominates and it is slower.
+`backend="inductor"` (needs `triton-windows<3.3`) gives no speedup here --
+the bottleneck is `grid_sample` plus the Python-level stage loop, not
+element-wise fusion. Leave compilation off unless you profiling long lines.
 
 ## Status codes
 

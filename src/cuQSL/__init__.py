@@ -19,7 +19,7 @@ from .interpolate import TensorFieldInterpolator
 from .solver import Diagnostics
 from .spherical import SphericalGeometry, qsl_solver_sph
 
-__version__ = "2.0.1"
+__version__ = "2.0.2"
 __author__ = "Guoyin Chen"
 
 cat = qsl_solver_cat

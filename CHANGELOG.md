@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.0.2 (frozen branch) -- 2026-11-25
+
+Performance only: results are unchanged to numerical accuracy.
+
+### Throughput
+
+| change | effect |
+| --- | --- |
+| `B`, `bhat`, `J(bhat)` and `curl B` are packed into one 15-channel interpolation grid (`CartesianGeometry.sample`), so each Runge-Kutta stage issues one `grid_sample` instead of two | 2.5x on CPU alone for the TD slice (`22.6 -> 8.95 ms` per seed) |
+| the domain exit point is computed analytically by clipping the step against the axis-aligned box (`geometry` exits via `exit_fraction`) instead of 40 bisection iterations, each of which cost a full RK attempt | one step instead of ~40 per boundary crossing |
+| `dtype=` is accepted by both solvers (`torch.float64` default, `torch.float32` halves memory) and forwarded to the geometry; `float32` no longer trips the in-place dtype check on the exit mask | GPU runs are numerically identical to the float64 CPU path to `4e-5` median in `logQ` |
+| `kernel.compile(backend=...)` / `bench` hooks wrap the RHS in `torch.compile` | `cudagraphs`: 1.6x when lines are long (4096 seeds: 15.4 s -> 9.4 s); no gain when they are short, since capture dominates. `inductor` (needs `triton-windows<3.3`) shows no gain: the bottleneck is `grid_sample` plus the Python stage loop |
+
+Measured on a 6241-point TD flux-rope slice (81x81x51, `step_size = 0.055`,
+median 19 steps per line), RTX 4060 Laptop: 2.0.1 CPU `141.5 s` ->
+2.0.2 CPU `55.9 s` -> 2.0.2 GPU `15.7 s` (`float64`) or `16.5 s` (`float32`).
+
+### Tests
+
+`test_float32_works_and_matches_float64` and
+`test_analytic_exit_fraction_matches_inside` added; suite is 12 passed.
+
 ## 2.0.1 (frozen branch) -- 2026-11-24
 
 ### Correctness
