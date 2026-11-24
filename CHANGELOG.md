@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.1 (frozen branch) -- 2026-11-24
+
+### Correctness
+
+| # | defect | fix |
+| --- | --- | --- |
+| P0-8 | the tangents of both legs were resolved in the *seed* frame. That is exact only while `bhat` stays parallel along the line; a generic field makes `|det A| != B_0/B_F`, which breaks the flux identity and pushes `Q` below its mathematical floor of 2. Found while running the TD flux-rope field: several slices gave `logQ` down to `-0.73` (`Q ~ 0.2`), with the seed-frame determinant off by up to `30x` | each leg is resolved in the orthonormal frame of *its own* endpoint (`geometry.frame_components`), and `Q = \\|A C^{-1}\\|_F^2 / \\|det A C^{-1}\\|` (`qsl.q_from_jacobians`). New regression: `B = (3 z, 0, 1)`, a translation map with `Q = 2` but a threefold change of `|B|` and a rotating `bhat`, gives `logQ = log10(2)` (the old seed-frame resolution gives `0.474`) |
+
 ## 2.0.0 (frozen branch) -- 2026-11-24
 
 Rewritten kernel, with every defect found in the 1.0.0 review addressed.  The

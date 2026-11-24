@@ -79,20 +79,31 @@ shell.
 
 ## What is computed
 
-With `bhat = B/|B|` and tangents `U`, `V` transported along the line,
-`dU/ds = (U . grad) bhat`, `dV/ds = (V . grad) bhat`, from the seed to the
-forward (`F`) and backward (`B`) boundary, the squashing factor follows
-Tassev & Savcheva (2017) eq. (11):
+With `bhat = B/|B|`, transport along the line the two tangents `U`, `V` of the
+seed's perpendicular plane, `dU/ds = (U . grad) bhat`, `dV/ds = (V . grad) bhat`,
+from the seed to the forward (`F`) and backward (`B`) boundary, and resolve
+them **in the orthonormal frame of the endpoint they reach**.  With `A` the
+`2x2` matrix so obtained at `F` and `C` at `B`, and `J = A C^{-1}`,
+
+```
+Q = |J|_F^2 / |det J|
+```
+
+This is the flux-tube (`Q_perp`) definition: the tangent plane at each end is
+perpendicular to the local field, so `|det A| = B_0/B_F` and `|det C| = B_0/B_B`
+by flux conservation.  The equivalent textbook form is Tassev & Savcheva (2017)
+eq. (11),
 
 ```
 N^2 = |U_F|^2 |V_B|^2 + |U_B|^2 |V_F|^2 - 2 (U_F . V_F) (U_B . V_B)
-Det = B_0^2 / (B_F B_B)
-Q   = N^2 / Det
+Q   = N^2 * B_F B_B / B_0^2
 ```
 
-which is algebraically the same as `Q = N^2 / |J|` of
-Scott, Pontin & Hornig (2017) with the flux-tube (`Q_perp`) normalisation:
-the ratio uses `|B|`, not the boundary-normal component.  The twist number is
+and it is the same as `Q = N^2 / |J|` of Scott, Pontin & Hornig (2017) under
+that normalisation: the ratio uses `|B|`, not the boundary-normal component.
+Resolving both legs in the *seed* frame instead silently breaks the flux
+identity whenever `|B|` or `bhat` changes along the line, and can push `Q`
+below its mathematical floor of 2.  The twist number is
 
 ```
 T = (1 / 4 pi) \int (B . curl B) / |B|^2 ds
@@ -111,6 +122,9 @@ together cover the full line `B -> F`.
   convention) with a second-order convergence in grid spacing
   (`-8.6e-4`, `-2.1e-4`, `-5.4e-5` for spacing `0.1`, `0.05`, `0.025`), and
   `T = -0.14235` matching the closed form to `1e-6`.
+* A slanted field `B = (3 z, 0, 1)` (translation map, `Q = 2`, but `|B|`
+  changes threefold and `bhat` rotates) gives `logQ = log10(2)`; resolving in
+  the seed frame gives `logQ = 0.474` instead.
 * A radial monopole on a spherical shell gives `logQ = 0.30103` within
   `5e-3` at 21x21x41, improving with resolution.
 * Seeds are evaluated in batches (`solver.batch_size`, default 262144); the

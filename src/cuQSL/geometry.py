@@ -89,6 +89,17 @@ def orthonormal_frame(bhat):
     return u, v
 
 
+def frame_components(vec_a, vec_b, e1, e2):
+    """Coordinates of ``(vec_a, vec_b)`` in the orthonormal frame ``(e1, e2)``.
+
+    Returns a ``(N, 2, 2)`` matrix whose columns are the two vectors, so the
+    determinant is the signed area they span in that plane.
+    """
+    row1 = torch.stack([(vec_a * e1).sum(-1), (vec_b * e1).sum(-1)], dim=-1)
+    row2 = torch.stack([(vec_a * e2).sum(-1), (vec_b * e2).sum(-1)], dim=-1)
+    return torch.stack([row1, row2], dim=-2)
+
+
 def rtp_from_xyz(xyz):
     """Cartesian -> spherical; ``theta = arccos(z/r)``, ``phi = atan2(y, x)``."""
     x, y, z = xyz[..., 0], xyz[..., 1], xyz[..., 2]

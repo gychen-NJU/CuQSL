@@ -67,6 +67,29 @@ class TestCartesian:
         assert np.all(logq[np.isfinite(logq)] >= LOG10_2 - 1e-6)
         assert solver.last_result["below_floor"].sum() == 0
 
+    def test_slanted_field_keeps_the_floor(self):
+        """Regression: the tangents must be resolved in their *own* endpoint frames.
+
+        ``B = (3 z, 0, 1)`` is divergence free; its lines are translations in
+        the plane, so ``Q = 2`` everywhere even though ``|B|`` changes by a
+        factor of three and ``bhat`` rotates along the line.  Resolving both
+        tangents in the seed frame instead breaks the flux identity and lifts
+        the answer to ``Q ~ 3``.
+        """
+        axis = np.linspace(-1.0, 1.0, 21)
+        X, _, Z = np.meshgrid(axis, axis, axis, indexing="ij")
+        B = np.zeros((21, 21, 21, 3))
+        B[..., 0] = 3.0 * Z
+        B[..., 2] = 1.0
+        solver = cat(B, [axis, axis, axis], rtol=1e-6, atol_pos=1e-8, atol_vec=1e-8)
+        rng = np.random.default_rng(0)
+        points = np.stack([rng.uniform(-0.7, 0.7, 30),
+                           rng.uniform(-0.7, 0.7, 30),
+                           rng.uniform(-0.7, 0.7, 30)], axis=-1)
+        logq, _, _ = solver(points)
+        assert np.all(logq >= LOG10_2 - 1e-6)
+        np.testing.assert_allclose(np.min(logq), LOG10_2, atol=1e-3)
+
     def test_save_and_load_roundtrip(self, tmp_path):
         B, grid = shear_field(n=11)
         solver = cat(B, grid)

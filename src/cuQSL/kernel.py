@@ -21,9 +21,9 @@ from __future__ import annotations
 
 import torch
 
-from .geometry import orthonormal_frame
+from .geometry import frame_components, orthonormal_frame
 from .integrator import Fehlberg45
-from .qsl import q_from_legs, twist_integrand
+from .qsl import q_from_jacobians, twist_integrand
 
 # Status codes for a single leg.
 RUNNING = 0
@@ -172,16 +172,14 @@ class FieldLineKernel:
         fwd = self._trace(points, +1.0)
         bwd = self._trace(points, -1.0)
 
-        B0 = self.geom.Bvec(points).pow(2).sum(-1).sqrt()
-        b0 = self.geom.bhat(points)
-        proj = b0.unsqueeze(-1) * b0.unsqueeze(-2)
-
-        def tangent(T):
-            return torch.einsum("nij,nj->ni", torch.eye(3, device=T.device) - proj, T)
-
-        aF, bF = tangent(fwd["U"]), tangent(fwd["V"])
-        aB, bB = tangent(bwd["U"]), tangent(bwd["V"])
-        q, log_q, below_floor = q_from_legs(B0, fwd["B"], bwd["B"], aF, bF, aB, bB)
+        # Resolve each leg's transported tangents in the frame of its *own*
+        # endpoint: only then does |det A| = B0/BF hold by flux conservation,
+        # which is what keeps Q at or above its floor of 2.
+        frame_f = orthonormal_frame(self.geom.bhat(fwd["point"]))
+        frame_b = orthonormal_frame(self.geom.bhat(bwd["point"]))
+        a = frame_components(fwd["U"], fwd["V"], *frame_f)
+        c = frame_components(bwd["U"], bwd["V"], *frame_b)
+        q, log_q, below_floor = q_from_jacobians(a, c)
 
         ok = (fwd["status"] == HIT_BOUNDARY) & (bwd["status"] == HIT_BOUNDARY)
         ok = ok & torch.isfinite(log_q)
