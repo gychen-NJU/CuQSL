@@ -193,6 +193,32 @@ src/cuQSL/
 tests/             analytic regression tests
 ```
 
+## Citation
+
+The archived releases are deposited on Zenodo:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24508866.svg)](https://doi.org/10.5281/zenodo.24508866)
+
+* **All versions (concept DOI):** [10.5281/zenodo.24508866](https://doi.org/10.5281/zenodo.24508866)
+  -- this identifier always resolves to the latest deposit.
+* **This release (2.0.2):** [10.5281/zenodo.24508867](https://doi.org/10.5281/zenodo.24508867)
+
+```bibtex
+@software{chen_cuqsl_2025,
+  author    = {Chen, Guoyin},
+  title     = {cuQSL: a fast, CUDA-supported solver for the
+               quasi-separatrix layer squashing factor},
+  version   = {2.0.2},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.24508867},
+  url       = {https://doi.org/10.5281/zenodo.24508867}
+}
+```
+
+Please cite the concept DOI when you refer to the software in general and the
+version DOI when the exact code state matters.
+
 ## References
 
 * Tassev, S. & Savcheva, A. 2017, ApJ, 840, 89,

@@ -2,6 +2,9 @@
 
 ## 2.0.2 (frozen branch) -- 2026-11-25
 
+Archived on Zenodo: [10.5281/zenodo.24508867](https://doi.org/10.5281/zenodo.24508867)
+(concept DOI for all versions: [10.5281/zenodo.24508866](https://doi.org/10.5281/zenodo.24508866)).
+
 Performance only: results are unchanged to numerical accuracy.
 
 ### Throughput

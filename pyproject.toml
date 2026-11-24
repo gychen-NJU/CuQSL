@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cuQSL"
-version = "2.0.0"
+version = "2.0.2"
 description = "Quasi-separatrix layer maps for Cartesian and spherical magnetic fields"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "Guoyin Chen" }]
+authors = [{ name = "Guoyin Chen", email = "gychen@smail.nju.edu.cn" }]
 keywords = ["solar physics", "magnetic field", "QSL", "squashing factor", "twist"]
 classifiers = [
     "License :: OSI Approved :: MIT License",
@@ -20,6 +20,11 @@ dependencies = [
     "numpy>=1.20",
     "torch>=1.10",
 ]
+
+[project.urls]
+Repository = "https://github.com/gychen-NJU/CuQSL"
+Changelog = "https://github.com/gychen-NJU/CuQSL/blob/frozen/CHANGELOG.md"
+DOI = "https://doi.org/10.5281/zenodo.24508866"
 
 [project.optional-dependencies]
 io = ["pyevtk>=1.1"]
